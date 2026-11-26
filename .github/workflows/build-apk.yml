@@ -8,12 +8,13 @@ on:
       - "app/**"
       - "web/**"
       - "scripts/**"
+      - "tests/**"
       - "*.gradle.kts"
       - "gradle.properties"
       - ".github/workflows/build-apk.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -103,6 +104,71 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Apply inspected Stage 1 archive to feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          git show origin/main:ScamShieldApk-stage1-changed-files.zip > /tmp/stage1.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          expected = {
+              "web/scamshield-app.html",
+              "app/src/main/assets/index.html",
+              "tests/ui/ui-regression.js",
+              "SCAMSHIELD_PROJECT_INSTRUCTIONS.md",
+          }
+          extracted = {}
+          with ZipFile("/tmp/stage1.zip") as z:
+              if z.testzip():
+                  raise SystemExit("Stage 1 archive failed its ZIP integrity check.")
+              for info in z.infolist():
+                  if info.is_dir():
+                      continue
+                  rel = next((p for p in expected if info.filename.endswith("/" + p)), None)
+                  if rel is None or rel in extracted:
+                      raise SystemExit(f"Unexpected or duplicate ZIP entry: {info.filename}")
+                  extracted[rel] = z.read(info)
+          if set(extracted) != expected:
+              raise SystemExit(f"Archive manifest mismatch: missing {sorted(expected-set(extracted))}")
+          if extracted["web/scamshield-app.html"] != extracted["app/src/main/assets/index.html"]:
+              raise SystemExit("The two packaged HTML copies are not byte-identical.")
+          instructions = Path("SCAMSHIELD_PROJECT_INSTRUCTIONS.md").read_bytes()
+          archived_instructions = extracted["SCAMSHIELD_PROJECT_INSTRUCTIONS.md"]
+          if not archived_instructions.startswith(instructions):
+              raise SystemExit("The archived instructions do not preserve the current document as an exact prefix; refusing to overwrite.")
+          test = extracted["tests/ui/ui-regression.js"].decode("utf-8")
+          old = "const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });"
+          new = "const browser = await chromium.launch({ args: ['--no-sandbox'] });"
+          if old not in test:
+              raise SystemExit("Could not find expected Chrome launcher line in UI regression test.")
+          extracted["tests/ui/ui-regression.js"] = test.replace(old, new, 1).encode("utf-8")
+          for rel, data in extracted.items():
+              path = Path(rel)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(data)
+              print(f"Applied {rel}: {len(data)} bytes")
+          PY
+          cmp -s web/scamshield-app.html app/src/main/assets/index.html
+          node -e "const fs=require('fs'); console.log('HTML source/assets identical:', fs.readFileSync('web/scamshield-app.html').equals(fs.readFileSync('app/src/main/assets/index.html')))"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/scamshield-app.html app/src/main/assets/index.html tests/ui/ui-regression.js SCAMSHIELD_PROJECT_INSTRUCTIONS.md
+          if ! git diff --cached --quiet; then
+            git diff --cached --stat
+            git commit -m "feat: apply Stage 1 navigation fixes and UI regression tests"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "Stage 1 files already match the branch."
+          fi
+
+      - name: Install Playwright and Chromium for UI regression test
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+
       - name: Run web and Kotlin source checks
         run: |
           node scripts/check-web.js
@@ -113,6 +179,7 @@ jobs:
           node scripts/test-verdict.js
           node scripts/test-demo-community.js
           node scripts/test-community-seed.js
+          node tests/ui/ui-regression.js
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
