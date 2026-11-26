@@ -1,0 +1,84 @@
+name: Inspect Stage 1 change archive
+
+on:
+  push:
+    branches:
+      - community-feed-badges-2026-11-26
+    paths:
+      - ".github/workflows/inspect-stage1-archive.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Retrieve archive from main and inspect without changing source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          git show origin/main:ScamShieldApk-stage1-changed-files.zip > /tmp/stage1.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          from hashlib import sha256
+          import difflib
+
+          archive = Path("/tmp/stage1.zip")
+          root = Path("/tmp/stage1-extracted")
+          root.mkdir(parents=True, exist_ok=True)
+          expected = {
+              "web/scamshield-app.html": "web/scamshield-app.html",
+              "app/src/main/assets/index.html": "app/src/main/assets/index.html",
+              "tests/ui/ui-regression.js": "tests/ui/ui-regression.js",
+              "SCAMSHIELD_PROJECT_INSTRUCTIONS.md": "SCAMSHIELD_PROJECT_INSTRUCTIONS.md",
+          }
+          report = []
+          with ZipFile(archive) as z:
+              infos = [i for i in z.infolist() if not i.is_dir()]
+              report.append(f"Archive bytes: {archive.stat().st_size}")
+              report.append(f"Entries: {len(infos)}")
+              for info in infos:
+                  report.append(f"ENTRY {info.filename} | {info.file_size} bytes | CRC {info.CRC:08x}")
+              extracted = {}
+              for info in infos:
+                  suffix = next((s for s in expected if info.filename.endswith("/" + s)), None)
+                  if suffix is None:
+                      report.append(f"UNEXPECTED ENTRY: {info.filename}")
+                      continue
+                  data = z.read(info)
+                  extracted[suffix] = data
+                  target = Path(expected[suffix])
+                  current = target.read_bytes() if target.exists() else b""
+                  report.append(f"FILE {suffix}: archive={len(data)} bytes sha256={sha256(data).hexdigest()} current={len(current)} bytes sha256={sha256(current).hexdigest() if target.exists() else 'MISSING'}")
+                  try:
+                      a = current.decode("utf-8").splitlines(keepends=True)
+                      b = data.decode("utf-8").splitlines(keepends=True)
+                      diff = list(difflib.unified_diff(a, b, fromfile="current/"+suffix, tofile="archive/"+suffix, n=2))
+                      report.append(f"DIFF {suffix}: {len(diff)} lines")
+                      if diff:
+                          report.extend(diff)
+                  except UnicodeDecodeError:
+                      report.append(f"DIFF {suffix}: not UTF-8 text")
+          a = extracted.get("web/scamshield-app.html")
+          b = extracted.get("app/src/main/assets/index.html")
+          report.append("HTML COPIES IDENTICAL: " + str(a is not None and a == b))
+          report.append("ALL EXPECTED FILES PRESENT: " + str(set(expected) == set(extracted)))
+          Path("stage1-archive-inspection.txt").write_text("\n".join(report), encoding="utf-8")
+          print("\n".join(report))
+          PY
+
+      - name: Upload inspection report
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage1-archive-inspection
+          path: stage1-archive-inspection.txt
+          if-no-files-found: error
+          retention-days: 7
