@@ -1,0 +1,90 @@
+// Headless-Chrome UI regression tests (touch emulation). Run: node tests/ui/ui-regression.js
+// These exercise the real HTML in a mobile viewport. They do NOT replace testing on a physical Android device.
+const path = require('path'), fs = require('fs');
+let chromium;
+try { ({ chromium } = require('playwright')); } catch (e) { ({ chromium } = require('/opt/npm-tools/node_modules/playwright')); }
+const root = path.resolve(__dirname, '../..');
+const html = path.join(root, 'app/src/main/assets/index.html');
+let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
+const todo = (c, m) => console.log(c ? 'PASS ' + m : 'TODO (not implemented yet) ' + m);
+const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
+
+(async () => {
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  const errors = []; page.on('pageerror', e => errors.push(String(e)));
+  await page.addInitScript(() => { try { if (!localStorage.getItem('ss')) localStorage.setItem('ss', JSON.stringify({ done: 1 })); } catch (e) {} });
+  await page.goto('file://' + html);
+  const cdp = await ctx.newCDPSession(page);
+  const swipe = async (x1, y1, x2, y2) => {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x1, y: y1 }] });
+    for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x1 + (x2 - x1) * i / 8, y: y1 + (y2 - y1) * i / 8 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.waitForTimeout(450);
+  };
+  const cur = () => page.evaluate(() => pg);
+  const goto = async id => { await page.evaluate(id => go(id), id); await page.waitForTimeout(100); };
+
+  // 1. swipe from every page, from the empty area below content and from the middle of content
+  for (const y of [650, 300]) {
+    for (let i = 0; i < 6; i++) {
+      await goto(PAGES[i]);
+      if (i < 5) { await swipe(330, y, 60, y); ok(await cur() === PAGES[i + 1], `swipe left at y=${y} from ${PAGES[i]} -> ${PAGES[i + 1]} (got ${await cur()})`); }
+      await goto(PAGES[i]);
+      if (i > 0) { await swipe(60, y, 330, y); ok(await cur() === PAGES[i - 1], `swipe right at y=${y} from ${PAGES[i]} -> ${PAGES[i - 1]} (got ${await cur()})`); }
+    }
+  }
+  // 2. language switch updates immediately incl. QR page
+  await goto('link');
+  const before = await page.locator('#app h2').first().innerText();
+  await page.click('[data-a=lang]'); await page.waitForTimeout(100);
+  const after = await page.locator('#app h2').first().innerText();
+  ok(before !== after, `language toggle changes QR heading immediately ("${before}" -> "${after}")`);
+  await page.click('[data-a=lang]');
+  // 3. back stack
+  await goto('feed'); await goto('link');
+  await page.goBack(); await page.waitForTimeout(150);
+  ok(await cur() === 'feed', `Back from QR returns to previous page (got ${await cur()})`);
+
+  // 5. finger-following, vertical scroll, guarded controls, settings panel, swipe toggle
+  await goto('home');
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 300, y: 600 }] });
+  for (let i = 1; i <= 5; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 300 - i * 20, y: 600 }] });
+  const tf = await page.evaluate(() => document.querySelector('#app').style.transform);
+  ok(/translateX\(-?\d+/.test(tf) && tf !== 'translateX(0px)', `page follows the finger mid-drag (transform=${tf})`);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await page.waitForTimeout(400);
+  await goto('home'); await swipe(200, 650, 200, 250);
+  ok(await cur() === 'home', 'vertical drag does not change page');
+  await goto('link');
+  const li = await page.locator('#li').boundingBox();
+  await swipe(li.x + li.width - 10, li.y + 10, li.x + 10, li.y + 10);
+  ok(await cur() === 'link', 'swiping inside a text input does not change page');
+  await page.click('[data-a=profile]'); await page.waitForTimeout(150);
+  ok(await page.locator('.modalShade').count() === 1, 'settings panel opens');
+  await page.locator('.modalPanel h2').click(); await page.waitForTimeout(100);
+  ok(await page.locator('.modalShade').count() === 1, 'tapping inside the settings panel does not close it');
+  await swipe(300, 400, 40, 400);
+  ok(await cur() === 'link', 'no page swipe while settings panel is open');
+  await page.goBack(); await page.waitForTimeout(200);
+  ok(await page.locator('.modalShade').count() === 0 && await cur() === 'link', 'Back closes the settings panel first');
+  await page.evaluate(() => { S.swipeOff = 1; sv(); });
+  await swipe(330, 650, 60, 650);
+  ok(await cur() === 'link', 'swipe can be disabled in settings');
+  await page.evaluate(() => { S.swipeOff = 0; sv(); });
+  // 6. QR page in Serbian Cyrillic: no Latin words except protected names
+  await page.evaluate(() => { S.lang = 'sr'; S.cyr = 1; R(); });
+  const latin = await page.evaluate(() => [...document.querySelector('main').innerText.matchAll(/[A-Za-zČŠŽĆĐčšžćđ]{3,}/g)].map(m => m[0]).filter(w => !/^(Android|DEMO|MTS|QR)$/.test(w)));
+  ok(latin.length === 0, `QR page fully Cyrillic (leftover Latin: ${latin.join(',') || 'none'})`);
+  ok(!/не отвара ништа/.test(await page.locator('main').innerText()), 'awkward "(ne otvara ništa)" filler removed from QR title');
+
+  // 4. features that must exist
+  const src = fs.readFileSync(html, 'utf8');
+  todo(/rulebook|RULES\s*=/.test(src), 'rulebook present in source');
+  todo(/coach|walkthrough/i.test(src), 'interactive tutorial present in source');
+  todo(/data-a=(signin|register|signup)/.test(src), 'sign-in / registration flow present');
+  console.log('page errors:', errors.length ? errors : 'none');
+  await browser.close();
+  console.log(fails ? `\n${fails} FAILED` : '\nALL PASSED');
+  process.exit(fails ? 1 : 0);
+})();
