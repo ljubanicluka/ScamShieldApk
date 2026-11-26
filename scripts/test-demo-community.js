@@ -2,8 +2,12 @@
 const fs = require('node:fs');
 const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
 function assert(ok, message) { if (!ok) throw new Error(message); console.log(`PASS ${message}`); }
-assert(/Array\.from\(\{length:100\}/.test(html), 'community seeds exactly 100 synthetic demo accounts');
-assert(/for\(let i=0;i<1200;i\+\+\)/.test(html), 'community creates 1,200 synthetic demo posts');
+assert(/const DEMO_HANDLES=/.test(html), 'community has an explicit fictional handle list');
+const handleMatch = html.match(/const DEMO_HANDLES=(\[[\s\S]*?\]);\s*const DEMO_USERS=/);
+assert(!!handleMatch, 'community handle list can be parsed');
+const handles = JSON.parse(handleMatch[1]);
+assert(handles.length === 124 && new Set(handles).size === 124, 'community seeds exactly 124 unique synthetic demo accounts');
+assert(/for\(let i=0;i<467;i\+\+\)/.test(html), 'community creates exactly 467 synthetic demo posts');
 const levelBody = html.match(/function demoLevel\(net\)\{([^}]+)\}/)?.[1];
 assert(!!levelBody, 'level calculation exists');
 const level = new Function('net', levelBody);
