@@ -195,3 +195,14 @@ Read this file before making any future ScamShield change.
 - Full 308-question record: `SCAMSHIELD_QUESTIONNAIRE_AND_ANSWERS.md`.
 - Merged old context + latest answers: `SCAMSHIELD_CLAUDE_MASTER_CONTEXT.md`.
 - Copy-ready prompt: `SCAMSHIELD_CLAUDE_PROMPT.md`.
+
+
+## 2026-11-26 — Claude Free-plan handoff and current workflow
+
+- The user currently uses Claude Free and has separate Claude and GitHub accounts. Different email addresses/accounts are not inherently a problem; when authorising any GitHub integration, use the GitHub account that owns or has access to `ljubanicluka/ScamShieldApk`.
+- Do not assume Claude Code / direct repository access is available on the user's current plan. The previous Claude attempt did not access the repository: its workspace was empty, its GitHub connection was not configured, and no files were changed or built.
+- Until repository-connected coding is available, use the ZIP-and-upload workflow with Claude's regular chat: download the required branch ZIP, upload it to a Claude conversation, and include this project-instructions file plus the relevant context/questionnaire/prompt documents. Ask Claude to inspect first and report its findings before editing.
+- When requesting edits through file uploads, require Claude to return the complete changed files (or a clearly structured patch) and identify every path changed. Do not accept claims that GitHub was updated unless a commit/PR link and commit SHA are provided.
+- Before replacing repository files, compare against the latest branch to avoid overwriting newer work. Keep `web/scamshield-app.html` and `app/src/main/assets/index.html` byte-identical. Do not upload secrets, API keys, signing material or access tokens.
+- Current handoff state: branch `community-feed-badges-2026-11-26`; PR #1 remains unmerged. Do not merge it without the user's explicit approval. No new application-code changes were made during the failed Claude repository-access attempt.
+- Suggested immediate sequence: (1) download the branch ZIP; (2) upload the ZIP and this file to Claude; (3) ask for a read-only repository audit with findings and test plan; (4) review the audit before authorising code edits; (5) have edits returned as files/patches; (6) run checks and build through GitHub Actions or a local Android build; (7) review the diff and open/update a PR without merging.
