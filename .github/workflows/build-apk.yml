@@ -34,6 +34,75 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Inspect uploaded Stage 1 archive (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          git show origin/main:ScamShieldApk-stage1-changed-files.zip > /tmp/stage1.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          from hashlib import sha256
+          import difflib
+
+          archive = Path("/tmp/stage1.zip")
+          expected = {
+              "web/scamshield-app.html": "web/scamshield-app.html",
+              "app/src/main/assets/index.html": "app/src/main/assets/index.html",
+              "tests/ui/ui-regression.js": "tests/ui/ui-regression.js",
+              "SCAMSHIELD_PROJECT_INSTRUCTIONS.md": "SCAMSHIELD_PROJECT_INSTRUCTIONS.md",
+          }
+          out = []
+          with ZipFile(archive) as z:
+              broken = z.testzip()
+              if broken:
+                  raise SystemExit(f"Corrupt ZIP entry: {broken}")
+              infos = [i for i in z.infolist() if not i.is_dir()]
+              extracted = {}
+              out += [f"Archive bytes: {archive.stat().st_size}", f"Entries: {len(infos)}"]
+              for info in infos:
+                  out.append(f"ENTRY {info.filename} | {info.file_size} bytes | CRC {info.CRC:08x}")
+                  suffix = next((s for s in expected if info.filename.endswith("/" + s)), None)
+                  if suffix is None:
+                      raise SystemExit(f"Unexpected archive entry: {info.filename}")
+                  data = z.read(info)
+                  extracted[suffix] = data
+                  target = Path(expected[suffix])
+                  current = target.read_bytes() if target.exists() else b""
+                  out.append(f"FILE {suffix}: archive={len(data)} sha256={sha256(data).hexdigest()} current={len(current)} sha256={sha256(current).hexdigest() if target.exists() else 'MISSING'}")
+                  if suffix in ("web/scamshield-app.html", "app/src/main/assets/index.html", "SCAMSHIELD_PROJECT_INSTRUCTIONS.md"):
+                      a = current.decode("utf-8").splitlines(keepends=True)
+                      b = data.decode("utf-8").splitlines(keepends=True)
+                      diff = list(difflib.unified_diff(a, b, fromfile="current/"+suffix, tofile="archive/"+suffix, n=2))
+                      out.append(f"DIFF {suffix}: {len(diff)} lines")
+                      out.extend(diff)
+                  elif suffix == "tests/ui/ui-regression.js":
+                      out.append("NEW UI REGRESSION TEST CONTENT:")
+                      out.extend(data.decode("utf-8").splitlines())
+              if set(extracted) != set(expected):
+                  raise SystemExit(f"Missing entries: {sorted(set(expected)-set(extracted))}")
+              ui_a = extracted["web/scamshield-app.html"]
+              ui_b = extracted["app/src/main/assets/index.html"]
+              out.append(f"HTML COPIES IDENTICAL: {ui_a == ui_b}")
+              if ui_a != ui_b:
+                  raise SystemExit("The two HTML files in the ZIP differ.")
+              if len(infos) != len(expected):
+                  raise SystemExit("Archive contains extra files.")
+          Path("stage1-archive-inspection.txt").write_text("\n".join(out), encoding="utf-8")
+          print("\n".join(out[:12]))
+          print("Full unified diffs and new test source are in the uploaded inspection artifact.")
+          PY
+
+      - name: Upload Stage 1 inspection report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage1-archive-inspection
+          path: stage1-archive-inspection.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Run web and Kotlin source checks
         run: |
           node scripts/check-web.js
