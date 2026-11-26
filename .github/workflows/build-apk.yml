@@ -3,7 +3,7 @@ name: Build ScamShield APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, community-feed-badges-2026-11-26]
     paths:
       - "app/**"
       - "web/**"
@@ -43,6 +43,7 @@ jobs:
           node scripts/test-qr-decode.js
           node scripts/test-verdict.js
           node scripts/test-demo-community.js
+          node scripts/test-community-seed.js
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
