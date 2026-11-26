@@ -109,3 +109,89 @@ Read this file before making any future ScamShield change.
 ### 2026-11-26 — Initial persistent handoff
 - User requested 124 accounts, 467 posts, a persistent assistant/developer instruction file and an append-only policy.
 - Preserve this file verbatim and append future instructions below.
+
+## 2026-11-26 — Detailed questionnaire answers and product direction
+
+### Authority
+- The user has now answered the 308-question design questionnaire. These answers supersede earlier unanswered-question assumptions. The full numbered questions and recorded answers are in `SCAMSHIELD_QUESTIONNAIRE_AND_ANSWERS.md`; the merged context and copy-ready Claude prompt are in `SCAMSHIELD_CLAUDE_MASTER_CONTEXT.md` and `SCAMSHIELD_CLAUDE_PROMPT.md`.
+- Preserve this file append-only. Do not delete or rewrite previous content. Do not ask again for already answered requirements. Keep all ambiguities below visible.
+
+### Product identity and appearance
+- Professional cybersecurity application combined with X/Reddit-inspired community. QR/link checking and community are central.
+- Community is detailed/information-rich. QR and Family are minimal/clean.
+- Rounded cards; fully rounded pill-shaped rectangular buttons (not circular); simple distinctive icons for every section; ScamShield logo in sticky top bar; sticky bottom navigation; subtle borders; restrained shadows mainly in onboarding/tutorial. Slight card press animation. No generic page-opening loading animation. Silent by default; haptics are optional pending evaluation.
+- Light theme white/blue/dark text; dark theme near-black/yellow/white. Follow Android theme by default, allow custom accent/appearance, remember per account. Compact but readable UI; user text-size controls, Android accessibility font scaling, tablet-specific layout. Red for important security warnings.
+- Six bottom destinations always visible: Device Security, Home, Community, QR Scanner, I've Been Scammed, Family. Selected destination gets subtle accent-tinted background.
+- Swipe follows the configured navigation order and user's finger, horizontal slide, target 150 ms. Nested horizontal gesture handling should be configurable and must not break galleries/carousels. Page order drag-and-drop editable, reset layout, starting-page selection in onboarding and Settings. Profiles open as separate sliding screens. Use normal Android Back-stack behaviour. Persist selected page; test scroll restoration.
+
+### Guest access, authentication, onboarding
+- Guest users can preview/browse, but community interactions are unavailable until registered and eligible.
+- Email/password and Google sign-in. Email verification immediately after email/password registration; use provider verification for Google.
+- Ask age, name, username and sex. Username changes have a 7-day cooldown. Display name is optional; if offered it can be changed independently. Profile picture and username can be changed after registration.
+- Tutorial must be an interactive walkthrough of the real UI with coach-mark overlays, illustrations, brief animations and screenshots. Not static slides. Skip individual sections, but no global one-tap skip. Show completion percentage; allow replay in Settings.
+- Explain all six sections, Settings, QR/link, reports, rules, badges/reputation, location and Family permissions. Request notification permission during onboarding after rationale; request other permissions contextually after explaining why. Do not request unsupported/unnecessary permissions.
+- User reports that current app has no working sign-in, tutorial or Rules page. Do not claim otherwise.
+
+### Profiles, community and reputation
+- Each of the 124 sample accounts needs a distinct complete fictional profile; every username/avatar is clickable. Tap opens a compact overview, then tap overview opens full profile.
+- Full profile has four tabs/icons under name: Posts, Comments, Reposts, About. Optional bio omitted when empty. Country can be hidden. Support banner, profile-photo crop/rotate/zoom, and hideable account creation date.
+- Settings include login history, active sessions and sign-out of all other devices. Deletion requires confirmation, seven-day waiting period and admin review/processing.
+- Popular/Personal feed by default; Latest, Trending, Following views; search, infinite scroll, bookmarks, sharing, multi-image/document evidence, detailed post/thread view, threaded comments, edit/delete with Edited marker and moderator-visible edit history, repost/quote-repost, user-chosen scam tags, content warnings and comment reports. No automatic tagging; provide more user-selectable scam categories. No post character limit.
+- Image/evidence viewer should support zoom, rotate, copy and download where applicable. Posts/images/links are reviewed by moderators before public display; admin-verified users may bypass review. Enforce on backend.
+- Endorse action wording: `Recommend`; separate from post votes and reversible. Notification history is deletable. Follow notifications only appear for actual activity; comment/reply notifications optional.
+- Keep email verification, community level and administrator verification internally distinct. Net vote thresholds remain 40/80/120/160/200 for Levels 1–5; requested visual names Bronze, Iron, Gold, Diamond, Emerald. Automatic community Verified at 250 net votes remains separate from manual admin verification (yellow outline/glow). User wants badge explanation, progress, award animation and notifications; negative votes immediately reduce progress, levels can be lost, automatic Verified not retained below threshold.
+- Q76 later says not to show automatic and admin verification separately on profiles; this conflicts with prior rules. Do not merge underlying states; confirm public display preference later.
+- User skipped visual inspiration questions 287–291 because provided references looked bad. Q292–297 mostly unanswered; explicit design direction above is sufficient to proceed.
+
+### QR, links and Device Security
+- QR landing page shows Scan, Upload Image and Enter Link choices. Camera preview in upper half, not full screen. Include scan frame/animation, detection feedback, available-only flashlight, zoom. Gallery and Android file picker; auto-decode; multiple codes per image. No barcode support needed.
+- Recognise Wi-Fi, contacts, phone, email, payment, websites, text, app-store/download links and locations. Show complete scrollable preview before action.
+- Never automatically open links, connect to Wi-Fi, save contacts, call, email, launch apps, navigate or pay. External links always require a full destination preview and Proceed/Cancel.
+- Analyse domains using available threat data. Safe/Suspicious/Likely Scam only with evidence and explanation; domain age only if reliable. Offline decoding is required; distinguish it from unavailable online reputation checks. Include copy, failed-scan guidance, first-use mini-tutorial and complete Serbian Latin/Cyrillic/English translations. No QR history or dedicated QR-report action in current scope.
+- Device Security: overall status, Scan, user-selected files/folders, scan history, exclusions, detailed findings, SHA-256 display/copy/compare, banking checklist, sourced App Lock help. SHA-256 is a fingerprint, not a malware verdict.
+- Android cannot grant an ordinary app unrestricted access to all private files or other apps' sandboxes. Use permitted Android APIs/system file/folder pickers and explain limits. No false full-device antivirus claims. Quarantine/delete only after confirmation. No automatic scan at app launch or fixed recurring schedule; optional configurable reminder notifications only.
+- App Lock lookup should offer live suggestions, common manufacturers, official sourced instructions, last-checked dates and user feedback.
+
+### Map, Family and reporting
+- A real interactive scam map is required (user says it is currently missing): current city if permission granted, manual city search, city following, grouped markers, scam-type colours, recent/historical labels and report lists from markers. Protect precise locations; location alerts opt-in.
+- Reports can be submitted as guest. Guest reports are anonymous; signed-in reports are associated privately with account for abuse prevention. User can view status and success confirmation.
+- Q193 public review is unanswered; recommended default is moderation review before public display.
+- Family should work across devices and focus on security alerts, suspicious notifications and potentially unsafe downloads, not screen-time surveillance. Require approval/consent, disclose sharing, per-category controls and disconnect on either side. Android notification/download visibility is limited and sensitive; only implement supported permissioned features. No stealth monitoring, private-message capture or unrelated data collection.
+- Q207 answered “no” to sharing transparency. This cannot mean hidden monitoring: transparency and user control are mandatory. Explain the conflict in product UI/spec.
+
+### Rules, moderation, backend
+- Build 200+ distinct numbered rules and about 30 subtle Easter eggs naturally mixed into the text. No separate joke chapter and do not label them as Easter eggs. Humour never overrides enforceable policy.
+- Expandable categories, titles/numbers, examples, search, three languages. Rules readable by guests; acceptance required before posting/commenting, not at guest preview/first browse. Important changes require acceptance; simple clickable update notice, not a full public changelog. User does not want per-rule moderator-action explanation.
+- Roles: User → Moderator → Admin → Owner. Owner is highest authority. Separate dashboards, reports overview, sort by all useful priority criteria, user lookup, logged admin attribution access for anonymous votes, audit log, appeals/status, restriction reasons/scopes/durations, permanent-ban warning and moderator request queue.
+- Ten independent reports may raise priority but never prove wrongdoing or auto-ban. Backend-enforce all roles/actions. Owner can do anything within the app; critical actions still need logging and secure enforcement.
+- User says no personal-data export in current scope, no standalone permission dashboard and no manual revoke-permission control. Briefly explain permissions; Android Settings manages revocation. Include public-search visibility, online status, block list, mute list and clear-local-data controls. Do not add per-user controls for who can follow/comment.
+- User approves real backend for auth, posts, votes, comments, reports, moderation and multi-device sync; multiple concurrent devices, automated tests and physical-device testing for major releases. No offline action queue; do provide offline indicator and retry.
+- Q283 is contradictory: user answered yes to remote source with local cache but also wrote “all data on phone”. Confirm architecture preference before final backend/storage decision. Cross-device sync requires remote source of truth.
+- User is open to replacing Kotlin/WebView if it materially fixes persistent problems; do not rewrite without technical evidence and preserve working functionality.
+
+### Reported current bugs/state
+- Bottom navigation works; scope of swipe failure is unclear, so test all six pages and nested horizontal components.
+- QR camera opens; image upload reportedly works.
+- Language change currently updates only after restart; make translations update immediately.
+- Tutorial, Rules page and functional sign-in are currently absent.
+- Tapping sample username opens a compact overview; build out correct full individual profile and four tabs.
+- User says transitions are absent; implement and test.
+- No other broken buttons noticed.
+- Q34/Q35 Back/scroll-restoration answers were partly garbled; use normal Back stack and test persistence. Q49 recurring scan setup was not explicitly answered; reminders only, no mandatory schedule. Q78 follower visibility unclear. Q298 swipe scope unclear. Q302 choose translation diagnosis after code inspection; Q303 confirms restart currently needed. Q207/Q283/Q76 conflicts remain unresolved as noted.
+
+### Required next work
+1. Audit current repository/branch/PR, source, tests and CI. Reproduce current bugs before editing.
+2. Fix design foundation, immediate translations, page swipe/transitions, back-stack and responsive navigation.
+3. Implement guest preview, authentication and interactive onboarding.
+4. Complete unique sample profiles and detailed community/thread screens.
+5. Complete QR/link UX and translations.
+6. Implement Device Security within Android storage limits.
+7. Build interactive map and transparent, consent-based Family features.
+8. Implement rulebook and backend-enforced moderation.
+9. Run automated checks, build APK and physically test on Android. Report device testing separately from compilation.
+- Never claim an item works merely because a button/mock exists. Keep the two HTML files byte-identical. Never commit secrets. Work on a feature branch and PR; do not merge without explicit user approval.
+
+### 2026-11-26 handoff filenames
+- Full 308-question record: `SCAMSHIELD_QUESTIONNAIRE_AND_ANSWERS.md`.
+- Merged old context + latest answers: `SCAMSHIELD_CLAUDE_MASTER_CONTEXT.md`.
+- Copy-ready prompt: `SCAMSHIELD_CLAUDE_PROMPT.md`.
