@@ -316,3 +316,16 @@ Read this file before making any future ScamShield change.
 - Updated Playwright coverage for the 200-entry rulebook, search, acceptance gate, four profile tabs, profile editing and the disconnected-auth safety boundary.
 - web/scamshield-app.html and app/src/main/assets/index.html must remain byte-identical.
 - Still requires: a real authentication/backend provider, live account sync, server-side moderation and real multi-device community. Physical Android testing and CI results must be recorded separately.
+
+
+## 2026-11-27 — Stage 3 completion checkpoint and CI hardening
+
+- Finalized the local-first Stage 3 UI foundation: rounded visual system, four selectable accent palettes, three corner-radius presets, light/dark theme persistence, tutorial replay, guest browsing, profile onboarding and local profile editing.
+- Added 200 numbered bilingual community rules across 20 categories, live search and category filters. Posting, commenting and reposting are gated on rule acceptance; browsing remains available to guests.
+- Added four profile tabs (Posts, Comments, Reposts, About), author-to-profile navigation, optional bio, city, and public/private profile preference. Kept Email Verified separate from community levels, automatic Verified at 250 net votes and Admin Verified styling. Levels map to Bronze/Iron/Gold/Diamond/Emerald at 40/80/120/160/200 net votes.
+- Added Account Access actions for sign-in, registration, password reset, verification-email resend and sign-out through an optional window.ScamShieldAuth provider. Expected methods: signIn({email,password}), register({email,password,username}), resetPassword({email}), resendVerification({email}), and signOut(). Credential fields remain disabled when no provider is attached; passwords are never written to local storage.
+- No production auth provider or database is configured. This is intentionally an integration boundary, not a claim that online registration, email verification or password recovery already work. The current community feed and interactions are local to the device; generated seed accounts/posts are sample content, not real people or reports.
+- CI static checks were updated so internal reference matches are explicitly distinguished from user reports without displaying DEMO labels on community posts. UI regression checks cover onboarding, theme customization, tutorial replay, 200 rules/search/acceptance, profile tabs/editing and the disconnected-auth safety boundary.
+- Build workflow now installs Playwright Chromium without apt --with-deps to avoid intermittent Microsoft Ubuntu repository 403 failures on hosted runners.
+- Current CI checkpoint: Playwright/source checks and Android unit tests passed on the feature branch. Debug APK assembly is running; record its final result and artifact ID after completion.
+- Keep the editable HTML source and Android WebView asset byte-identical. Physical-device testing remains required before calling the APK release-ready.
