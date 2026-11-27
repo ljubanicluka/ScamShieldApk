@@ -171,7 +171,23 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
   await page.click('[data-a=saveLocalProfile]'); await page.waitForTimeout(80);
   await page.click('[data-a=openAccount]').catch(() => {}); await page.waitForTimeout(80);
   ok(await page.locator('#authEmail').count() === 1, 'account access page is available');
-  ok(await page.locator('#authPassword').isDisabled(), 'password field stays disabled until a secure auth provider is connected');
+  // The password field must be disabled without the provider, and enabled only
+  // when the Supabase adapter exposes both required authentication methods.
+  const providerState = await page.evaluate(() => {
+    const provider = window.ScamShieldAuth;
+    window.ScamShieldAuth = undefined;
+    R();
+    const disabledWithoutProvider = document.querySelector('#authPassword')?.disabled === true;
+    window.ScamShieldAuth = provider;
+    R();
+    const enabledWithProvider = !!provider &&
+      typeof provider.signIn === 'function' &&
+      typeof provider.register === 'function' &&
+      document.querySelector('#authPassword')?.disabled === false;
+    return { disabledWithoutProvider, enabledWithProvider };
+  });
+  ok(providerState.disabledWithoutProvider, 'password field stays disabled without a secure auth provider');
+  ok(providerState.enabledWithProvider, 'password field is enabled when the Supabase auth adapter is connected');
   ok(await page.locator('.ruleItem').count() === 0, 'account access does not render stale rulebook entries');
 
   // 4. features that must exist
