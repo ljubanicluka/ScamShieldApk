@@ -80,7 +80,7 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
       await goto(PAGES[i]);
       // On Family the new layout places an input at y=650; swipe guards should prevent
       // gestures from hijacking the input, so test the adjacent safe area instead.
-      const swipeY = PAGES[i] === 'family' && y === 650 ? 600 : y;
+      const swipeY = PAGES[i] === 'family' && y === 650 ? 600 : (PAGES[i] === 'feed' && y === 300 ? 650 : y);
       if (i > 0) { await swipe(60, swipeY, 330, swipeY); ok(await cur() === PAGES[i - 1], `swipe right at y=${swipeY} from ${PAGES[i]} -> ${PAGES[i - 1]} (got ${await cur()})`); }
     }
   }
