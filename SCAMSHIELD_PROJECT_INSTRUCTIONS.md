@@ -301,3 +301,18 @@ Read this file before making any future ScamShield change.
 - Not implemented yet: secure online sign-in/registration, email verification, account recovery, 200+ rulebook, full four-tab profiles and real multi-device community. These require a real authentication/backend design. Do not store plaintext passwords or present a local profile as a secure online account.
 - Backend architecture remains undecided in the project questionnaire: remote source of truth with local cache is needed for cross-device sync, while the user also previously requested phone-local storage. Confirm this before implementing online authentication or sync.
 - CI and physical Android device validation for this update are pending.
+
+
+## 2026-11-27 — Stage 3 profile, rules and account foundations
+
+- Added a 200-entry rulebook across 20 topics, with English and Serbian text, category filters and search.
+- Community posting, commenting and reposting require rule acceptance; reading the feed remains available without accepting.
+- Added guest browsing from onboarding and a separate Account Access page.
+- Added an account-provider adapter contract using window.ScamShieldAuth.signIn({email,password}) and .register({email,password}). Passwords are passed directly to the provider and are not written to local storage. The UI disables credential fields and actions when no provider is connected.
+- Important: no live authentication provider, email verification, password reset or account database is configured in this repository. The UI is an integration point, not proof of real registration/sign-in. A backend provider and its configuration are still required before online accounts can be enabled.
+- Added four-tab profile pages (Posts, Comments, Reposts, About), local profile editing, optional bio, city, public/private setting, author-to-profile navigation, and private-profile visibility handling.
+- Community interactions remain local to this installation. The preloaded community accounts/posts are generated sample content; they are not real users, public reports or a shared service.
+- Kept separate email verification, automatic community verification at 250 net votes, level thresholds 40/80/120/160/200 (Bronze/Iron/Gold/Diamond/Emerald), and Admin Verified styling.
+- Updated Playwright coverage for the 200-entry rulebook, search, acceptance gate, four profile tabs, profile editing and the disconnected-auth safety boundary.
+- web/scamshield-app.html and app/src/main/assets/index.html must remain byte-identical.
+- Still requires: a real authentication/backend provider, live account sync, server-side moderation and real multi-device community. Physical Android testing and CI results must be recorded separately.
