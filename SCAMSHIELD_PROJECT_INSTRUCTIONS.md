@@ -233,3 +233,5 @@ Read this file before making any future ScamShield change.
 - Playwright tests now capture all six main screens in light/dark themes and Serbian Latin, Serbian Cyrillic and English (36 screenshots at a 390 x 780 viewport), and assert the new app shell and per-page layout.
 - Automated tests, the Android debug build and screenshot review are pending for this change. CI output does not replace physical-device testing.
 - Stage 2 is not marked complete until automated checks pass and screenshots have been reviewed.
+
+- Follow-up validation correction: repository has a later active `R()` renderer that overrides the earlier declaration. The page-introduction/home-hero logic was moved into the active renderer; the next CI run verifies the actual rendered six-page layout.
