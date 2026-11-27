@@ -99,11 +99,6 @@
   // a previously authenticated session without exposing credentials to the UI.
   if (typeof window.R === 'function') window.R();
   provider.restoreSession().then(user => {
-    if (user && window.S) {
-      window.S.account = { uid: user.id, email: user.email, verified: user.emailVerified };
-      window.S.guest = 0;
-      if (typeof window.sv === 'function') window.sv();
-      if (typeof window.R === 'function') window.R();
-    }
+    if (user) window.dispatchEvent(new CustomEvent('scamshield:auth-restored', { detail: { user } }));
   }).catch(() => {});
 })();
