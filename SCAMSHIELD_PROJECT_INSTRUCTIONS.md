@@ -237,3 +237,15 @@ Read this file before making any future ScamShield change.
 - Follow-up validation correction: repository has a later active `R()` renderer that overrides the earlier declaration. The page-introduction/home-hero logic was moved into the active renderer; the next CI run verifies the actual rendered six-page layout.
 
 - Follow-up visual review: removed redundant duplicate headings/descriptions from Home and QR Scanner; kept the QR scan action card and original camera/gallery actions. Updated the swipe regression case to avoid starting inside the Family screen's protected text input; gestures inside controls remain intentionally blocked.
+
+
+## 2026-11-27 — Stage 2 visual redesign validation result
+
+- Status: **automated validation passed** on UI/build revision `6ded7b0be2c7f68f32cbc0a4c82cc2bac6ca59cb`.
+- GitHub Actions run: `46024865835` — successful.
+- The run passed Playwright UI regression, all web/Kotlin and functional source scripts, screenshot capture, Android unit tests, debug APK assembly, APK existence validation and artifact upload.
+- The screenshot matrix contains 36 renders: all six main pages, light and dark themes, and Serbian Latin, Serbian Cyrillic and English.
+- The packaged APK was inspected: it is a valid Android package, and its `assets/index.html` exactly matches the redesigned source HTML.
+- The source handoff ZIP passed ZIP integrity verification; its editable web UI and Android WebView copies are byte-identical.
+- Stage 2 visual redesign is complete from the source/automated-build perspective. A physical Android installation and interaction pass is still required before calling the UI device-verified.
+- PR #1 remains open and unmerged. Continue working on the feature branch; do not merge without the user's explicit approval.
