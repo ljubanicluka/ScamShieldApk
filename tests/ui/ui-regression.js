@@ -159,7 +159,7 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
   await page.click('[data-a=openRules]'); await page.waitForTimeout(80);
   ok(await page.locator('.ruleItem').count() === 200, 'rulebook contains 200 numbered entries');
   await page.fill('#ruleSearch', 'PIN'); await page.waitForTimeout(80);
-  ok(await page.locator('.ruleItem').count() > 0, 'rulebook search returns matching rules');
+  ok(await page.locator('.ruleItem').count() > 0 && await page.locator('.ruleItem').count() < 200, 'rulebook search filters the 200 rules');
   await page.click('[data-a=ruleFilter][data-v=all]'); await page.waitForTimeout(80);
   await page.click('[data-a=acceptRules]'); await page.waitForTimeout(80);
   ok(await page.evaluate(() => !!S.rulesAccepted), 'community rules acceptance is saved');
