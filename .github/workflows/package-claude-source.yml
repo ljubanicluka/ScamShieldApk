@@ -34,7 +34,7 @@ jobs:
               for raw in files:
                   if not raw:
                       continue
-                  name = raw.decode("utf-8")
+                  name = raw
                   if name in excluded_exact or name.startswith(excluded_prefixes):
                       continue
                   path = Path(name)
