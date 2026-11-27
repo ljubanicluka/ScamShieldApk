@@ -183,6 +183,8 @@ using (deleted_at is null and exists (
   select 1 from public.posts p where p.id = post_id and p.deleted_at is null
   and exists (select 1 from public.profiles a where a.id = p.author_id
     and (a.is_public or a.id = (select auth.uid())))
+  and exists (select 1 from public.profiles commenter where commenter.id = author_id
+    and (commenter.is_public or commenter.id = (select auth.uid())))
 ));
 drop policy if exists "comments_insert_own" on public.comments;
 create policy "comments_insert_own" on public.comments for insert to authenticated
@@ -215,7 +217,11 @@ using (voter_id = (select auth.uid()));
 
 drop policy if exists "reposts_read_visible_posts" on public.post_reposts;
 create policy "reposts_read_visible_posts" on public.post_reposts for select to anon, authenticated
-using (exists (select 1 from public.posts p where p.id = post_id and p.deleted_at is null));
+using (exists (select 1 from public.posts p where p.id = post_id and p.deleted_at is null
+  and exists (select 1 from public.profiles author where author.id = p.author_id
+    and (author.is_public or author.id = (select auth.uid()))))
+  and exists (select 1 from public.profiles actor where actor.id = user_id
+    and (actor.is_public or actor.id = (select auth.uid()))));
 drop policy if exists "reposts_insert_self" on public.post_reposts;
 create policy "reposts_insert_self" on public.post_reposts for insert to authenticated
 with check (user_id = (select auth.uid()));
@@ -242,8 +248,31 @@ drop policy if exists "reports_select_self" on public.scam_reports;
 create policy "reports_select_self" on public.scam_reports for select to authenticated
 using (reporter_id = (select auth.uid()));
 
-grant select on public.profiles, public.posts, public.comments, public.post_votes,
+grant select on public.profiles, public.posts, public.comments,
   public.post_reposts, public.author_endorsements to anon, authenticated;
+revoke select on public.post_votes from anon, authenticated;
+
+-- Return only aggregate vote totals. Individual voter IDs remain private.
+create or replace function public.get_post_vote_totals(p_post_ids uuid[])
+returns table (post_id uuid, upvotes bigint, downvotes bigint)
+language sql
+stable
+security definer
+set search_path = ''
+as $
+  select v.post_id,
+    count(*) filter (where v.value = 1) as upvotes,
+    count(*) filter (where v.value = -1) as downvotes
+  from public.post_votes v
+  join public.posts p on p.id = v.post_id
+  join public.profiles author on author.id = p.author_id
+  where v.post_id = any(p_post_ids)
+    and p.deleted_at is null
+    and (author.is_public or author.id = (select auth.uid()))
+  group by v.post_id;
+$;
+revoke all on function public.get_post_vote_totals(uuid[]) from public;
+grant execute on function public.get_post_vote_totals(uuid[]) to anon, authenticated;
 grant insert, update, delete on public.posts, public.comments to authenticated;
 grant insert, update, delete on public.post_votes to authenticated;
 grant insert, delete on public.post_reposts, public.author_endorsements to authenticated;
