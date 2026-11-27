@@ -3,7 +3,7 @@ name: Build ScamShield APK
 on:
   workflow_dispatch:
   push:
-    branches: [main, community-feed-badges-2026-11-26]
+    branches: [main, community-feed-badges-2026-11-26, supabase-backend-integration]
     paths:
       - "app/**"
       - "web/**"
