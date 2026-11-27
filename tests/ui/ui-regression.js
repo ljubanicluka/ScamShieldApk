@@ -26,6 +26,52 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
   const cur = () => page.evaluate(() => pg);
   const goto = async id => { await page.evaluate(id => go(id), id); await page.waitForTimeout(100); };
 
+  // Capture the six main screens in two themes and three language modes for visual review.
+  const screenshotDir = path.join(root, 'ui-screenshots');
+  fs.mkdirSync(screenshotDir, { recursive: true });
+  const languageModes = [
+    { id: 'sr-lat', lang: 'sr', cyr: 0 },
+    { id: 'sr-cyr', lang: 'sr', cyr: 1 },
+    { id: 'en', lang: 'en', cyr: 0 }
+  ];
+  for (const theme of ['light', 'dark']) {
+    for (const language of languageModes) {
+      for (const id of PAGES) {
+        await page.evaluate(({ id, language, theme }) => {
+          S.done = 1; S.lang = language.lang; S.cyr = language.cyr; S.th = theme; pg = id; R(); window.scrollTo(0, 0);
+        }, { id, language, theme });
+        await page.waitForTimeout(80);
+        await page.screenshot({
+          path: path.join(screenshotDir, id + '-' + theme + '-' + language.id + '-390x780.png'),
+          fullPage: true,
+          animations: 'disabled'
+        });
+      }
+    }
+  }
+  await page.evaluate(() => { S.lang = 'sr'; S.cyr = 0; S.th = ''; R(); });
+  const shell = await page.evaluate(() => ({
+    nav: document.querySelectorAll('#bottomNav button').length,
+    header: !!document.querySelector('header.appHeader'),
+    icons: document.querySelectorAll('#bottomNav svg').length
+  }));
+  ok(shell.nav === 6, 'redesigned shell retains all six navigation items');
+  ok(shell.header, 'branded ScamShield app header is present');
+  ok(shell.icons === 6, 'all six navigation items have vector icons');
+  const sourceCopy = fs.readFileSync(path.join(root, 'web/scamshield-app.html'));
+  const assetCopy = fs.readFileSync(html);
+  ok(sourceCopy.equals(assetCopy), 'editable UI and packaged Android asset are byte-identical');
+
+  // All six principal screens should have the redesigned content hierarchy.
+  for (const id of PAGES) {
+    await goto(id);
+    const check = await page.evaluate(() => ({
+      pageIntro: !!document.querySelector('#app .pageIntro'),
+      homeHero: !!document.querySelector('#app .homeHero')
+    }));
+    ok(id === 'home' ? check.homeHero : check.pageIntro, id + ' page has the redesigned section header');
+  }
+
   // 1. swipe from every page, from the empty area below content and from the middle of content
   for (const y of [650, 300]) {
     for (let i = 0; i < 6; i++) {
