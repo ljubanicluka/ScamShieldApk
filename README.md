@@ -54,4 +54,4 @@ node scripts/test-qr-decode.js
 
 Run `node scripts/test-demo-community.js` to check the demo account/post counts, net-vote thresholds, private-profile visibility and independent Admin glow.
 
-The next stage is the real backend and security model. It requires a Supabase project and its public project URL/anon key; never put a service-role key in the Android app. Until that is configured, community interactions remain local demo data.
+The Supabase authentication adapter and initial RLS-protected database migration are now included on the `supabase-backend-integration` branch. Follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md) to apply the migration and configure email authentication. The account UI uses the publishable key only. The community feed is still local demo data in this stage; remote posts, comments, vote totals, reposts and report workflows must be connected in a subsequent stage before cross-device sync is available.
