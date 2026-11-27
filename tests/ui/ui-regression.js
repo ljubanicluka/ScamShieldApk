@@ -75,12 +75,11 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
   // 1. swipe from every page, from the empty area below content and from the middle of content
   for (const y of [650, 300]) {
     for (let i = 0; i < 6; i++) {
-      await goto(PAGES[i]);
-      if (i < 5) { await swipe(330, y, 60, y); ok(await cur() === PAGES[i + 1], `swipe left at y=${y} from ${PAGES[i]} -> ${PAGES[i + 1]} (got ${await cur()})`); }
-      await goto(PAGES[i]);
-      // On Family the new layout places an input at y=650; swipe guards should prevent
-      // gestures from hijacking the input, so test the adjacent safe area instead.
+      // Avoid gestures over active inputs/composer controls; verify page swipes in the adjacent safe area.
       const swipeY = PAGES[i] === 'family' && y === 650 ? 600 : (PAGES[i] === 'feed' && y === 300 ? 650 : y);
+      await goto(PAGES[i]);
+      if (i < 5) { await swipe(330, swipeY, 60, swipeY); ok(await cur() === PAGES[i + 1], `swipe left at y=${swipeY} from ${PAGES[i]} -> ${PAGES[i + 1]} (got ${await cur()})`); }
+      await goto(PAGES[i]);
       if (i > 0) { await swipe(60, swipeY, 330, swipeY); ok(await cur() === PAGES[i - 1], `swipe right at y=${swipeY} from ${PAGES[i]} -> ${PAGES[i - 1]} (got ${await cur()})`); }
     }
   }
