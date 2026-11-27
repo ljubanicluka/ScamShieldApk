@@ -213,14 +213,14 @@ jobs:
 
           excluded_exact = {"ScamShieldApk-stage1-changed-files.zip"}
           excluded_prefixes = ("ScamShield-Stage1-Source/",)
-          files = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\\0")
+          files = subprocess.check_output(["git", "ls-files"], text=True).splitlines()
           output = Path("ScamShield-Stage2-Claude-Source.zip")
           count = 0
           with ZipFile(output, "w", compression=ZIP_DEFLATED, compresslevel=6) as archive:
               for raw in files:
                   if not raw:
                       continue
-                  name = raw.decode("utf-8")
+                  name = raw
                   if name in excluded_exact or name.startswith(excluded_prefixes):
                       continue
                   path = Path(name)
