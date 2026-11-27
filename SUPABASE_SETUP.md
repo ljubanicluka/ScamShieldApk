@@ -19,7 +19,7 @@ Supabase's built-in email sender is rate-limited and intended for testing. For a
 
 ## 3. App configuration
 
-The publishable key is embedded in `supabase-provider.js`; it is intended to be public. RLS is the security boundary. Never put a secret or service-role key in Android assets, JavaScript, GitHub, or an APK.
+The publishable key is embedded in `web/supabase-provider.js` and the identical Android WebView asset `app/src/main/assets/supabase-provider.js`; it is intended to be public. RLS is the security boundary. Never put a secret or service-role key in Android assets, JavaScript, GitHub, or an APK.
 
 ## 4. Current scope and limitations
 
