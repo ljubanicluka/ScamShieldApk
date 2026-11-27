@@ -1,25 +1,9 @@
-# Source package contents
+# Source package notes
 
-This is the `ScamShieldApk/` project directory from branch `scamshield-apk-ci` at commit `80087c266f85f971f306de3384aed4835d519e0d`.
+This repository contains the ScamShield Kotlin Android application, WebView interface, bundled assets, native QR scanner, Gradle configuration, automated checks, audit notes, project memory and device test checklist.
 
-It contains the Kotlin Android application, WebView UI source, bundled web assets, native QR scanner, Gradle configuration, CI smoke checker, audit, Claude handoff, hardening prompt, and device test checklist.
+The canonical editable UI is `web/scamshield-app.html`. The Android WebView copy is `app/src/main/assets/index.html` and is synchronized by CI.
 
-Important files:
+Build the APK with the **Build ScamShield APK** workflow. Download the APK from the workflow artifact or release created by a manually dispatched run. Do not commit signing keys or passwords.
 
-- `app/src/main/java/rs/scamshield/app/MainActivity.kt`
-- `app/src/main/java/rs/scamshield/app/QrScannerActivity.kt`
-- `app/src/main/java/rs/scamshield/app/LiveAdvisoryService.kt`
-- `web/scamshield-app.html`
-- `app/src/main/assets/index.html`
-- `app/src/main/assets/jsQR.js`
-- `app/build.gradle.kts`
-- `build.gradle.kts`
-- `settings.gradle.kts`
-- `scripts/check-web.js`
-- `AUDIT_REPORT.md`
-- `TEST_CHECKLIST.md`
-- `CLAUDE_HANDOFF.md`
-- `CLAUDE_PROMPT.md`
-- `CI_RUN_25_RESULT.md`
-
-The root repository workflow that publishes the APK is outside this project folder at `.github/workflows/build-scamshield-kotlin-apk.yml`.
+See `SCAMSHIELD_MEMORY.md` for current project architecture, verified status, constraints and next steps.
