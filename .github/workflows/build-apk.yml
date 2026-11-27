@@ -110,7 +110,7 @@ jobs:
       - name: Install Playwright and Chromium for UI regression test
         run: |
           npm install --no-save --no-package-lock playwright
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
 
       - name: Run web and Kotlin source checks
         run: |
