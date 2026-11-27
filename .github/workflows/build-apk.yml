@@ -1,5 +1,7 @@
 name: Build ScamShield APK
 
+# Rebuild requested on 2026-11-27; APK is a debug-signed CI artifact.
+
 on:
   workflow_dispatch:
   push:
@@ -23,18 +25,15 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
-
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Inspect uploaded Stage 1 archive (read-only)
         shell: bash
         run: |
@@ -46,7 +45,6 @@ jobs:
           from zipfile import ZipFile
           from hashlib import sha256
           import difflib
-
           archive = Path("/tmp/stage1.zip")
           expected = {
               "web/scamshield-app.html": "web/scamshield-app.html",
@@ -57,44 +55,28 @@ jobs:
           out = []
           with ZipFile(archive) as z:
               broken = z.testzip()
-              if broken:
-                  raise SystemExit(f"Corrupt ZIP entry: {broken}")
+              if broken: raise SystemExit(f"Corrupt ZIP entry: {broken}")
               infos = [i for i in z.infolist() if not i.is_dir()]
               extracted = {}
               out += [f"Archive bytes: {archive.stat().st_size}", f"Entries: {len(infos)}"]
               for info in infos:
                   out.append(f"ENTRY {info.filename} | {info.file_size} bytes | CRC {info.CRC:08x}")
                   suffix = next((s for s in expected if info.filename.endswith("/" + s)), None)
-                  if suffix is None:
-                      raise SystemExit(f"Unexpected archive entry: {info.filename}")
-                  data = z.read(info)
-                  extracted[suffix] = data
-                  target = Path(expected[suffix])
-                  current = target.read_bytes() if target.exists() else b""
+                  if suffix is None: raise SystemExit(f"Unexpected archive entry: {info.filename}")
+                  data = z.read(info); extracted[suffix] = data
+                  target = Path(expected[suffix]); current = target.read_bytes() if target.exists() else b""
                   out.append(f"FILE {suffix}: archive={len(data)} sha256={sha256(data).hexdigest()} current={len(current)} sha256={sha256(current).hexdigest() if target.exists() else 'MISSING'}")
                   if suffix in ("web/scamshield-app.html", "app/src/main/assets/index.html", "SCAMSHIELD_PROJECT_INSTRUCTIONS.md"):
-                      a = current.decode("utf-8").splitlines(keepends=True)
-                      b = data.decode("utf-8").splitlines(keepends=True)
-                      diff = list(difflib.unified_diff(a, b, fromfile="current/"+suffix, tofile="archive/"+suffix, n=2))
-                      out.append(f"DIFF {suffix}: {len(diff)} lines")
-                      out.extend(diff)
+                      diff = list(difflib.unified_diff(current.decode("utf-8").splitlines(keepends=True), data.decode("utf-8").splitlines(keepends=True), fromfile="current/"+suffix, tofile="archive/"+suffix, n=2))
+                      out.append(f"DIFF {suffix}: {len(diff)} lines"); out.extend(diff)
                   elif suffix == "tests/ui/ui-regression.js":
-                      out.append("NEW UI REGRESSION TEST CONTENT:")
-                      out.extend(data.decode("utf-8").splitlines())
-              if set(extracted) != set(expected):
-                  raise SystemExit(f"Missing entries: {sorted(set(expected)-set(extracted))}")
-              ui_a = extracted["web/scamshield-app.html"]
-              ui_b = extracted["app/src/main/assets/index.html"]
-              out.append(f"HTML COPIES IDENTICAL: {ui_a == ui_b}")
-              if ui_a != ui_b:
-                  raise SystemExit("The two HTML files in the ZIP differ.")
-              if len(infos) != len(expected):
-                  raise SystemExit("Archive contains extra files.")
+                      out.append("NEW UI REGRESSION TEST CONTENT:"); out.extend(data.decode("utf-8").splitlines())
+              if set(extracted) != set(expected): raise SystemExit(f"Missing entries: {sorted(set(expected)-set(extracted))}")
+              if extracted["web/scamshield-app.html"] != extracted["app/src/main/assets/index.html"]: raise SystemExit("The two HTML files in the ZIP differ.")
+              if len(infos) != len(expected): raise SystemExit("Archive contains extra files.")
           Path("stage1-archive-inspection.txt").write_text("\n".join(out), encoding="utf-8")
-          print("\n".join(out[:12]))
-          print("Full unified diffs and new test source are in the uploaded inspection artifact.")
+          print("\n".join(out[:12])); print("Full inspection is in the artifact.")
           PY
-
       - name: Upload Stage 1 inspection report
         if: always()
         uses: actions/upload-artifact@v4
@@ -103,15 +85,12 @@ jobs:
           path: stage1-archive-inspection.txt
           if-no-files-found: ignore
           retention-days: 7
-
       - name: Keep current feature-branch source authoritative
         run: echo "Stage 1 archive is historical; do not overwrite current branch files."
-
       - name: Install Playwright and Chromium for UI regression test
         run: |
           npm install --no-save --no-package-lock playwright
           npx playwright install chromium
-
       - name: Run web and Kotlin source checks
         run: |
           node scripts/check-web.js
@@ -123,7 +102,6 @@ jobs:
           node scripts/test-demo-community.js
           node scripts/test-community-seed.js
           node tests/ui/ui-regression.js
-
       - name: Upload UI review screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -132,21 +110,16 @@ jobs:
           path: ui-screenshots/
           if-no-files-found: warn
           retention-days: 14
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
-
       - name: Run Android unit tests
         run: gradle --no-daemon testDebugUnitTest
-
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
-
       - name: Verify APK exists
         run: test -s app/build/outputs/apk/debug/app-debug.apk
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
