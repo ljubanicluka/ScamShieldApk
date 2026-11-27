@@ -127,10 +127,37 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
   ok(latin.length === 0, `QR page fully Cyrillic (leftover Latin: ${latin.join(',') || 'none'})`);
   ok(!/не отвара ништа/.test(await page.locator('main').innerText()), 'awkward "(ne otvara ništa)" filler removed from QR title');
 
+  // Stage 3: tutorial, profile setup, replay and appearance preferences.
+  await page.evaluate(() => { S.done = 0; S.ob = 0; R(); });
+  ok(await page.locator('.onboardWrap').count() === 1, 'first-run tutorial is shown');
+  for (let i = 0; i < 3; i++) { await page.click('[data-a=obn]'); await page.waitForTimeout(40); }
+  ok(await page.locator('#onAge').count() === 1, 'onboarding reaches profile setup after tutorial');
+  await page.fill('#onAge', '17');
+  await page.fill('#onName', 'Test User');
+  await page.fill('#onUsername', 'test_user_17');
+  await page.selectOption('#onSex', 'prefer-not');
+  await page.selectOption('#onAccent', 'teal');
+  await page.click('[data-a=finishOnboarding]');
+  await page.waitForTimeout(100);
+  const profileSaved = await page.evaluate(() => S.done === 1 && S.profile.username === 'test_user_17' && S.accent === 'teal');
+  ok(profileSaved, 'profile setup saves required fields locally');
+  await page.click('[data-a=profile]'); await page.waitForTimeout(100);
+  await page.selectOption('#accent', 'violet');
+  await page.selectOption('#roundness', 'extra');
+  await page.click('[data-a=saveProfile]'); await page.waitForTimeout(100);
+  const appearance = await page.evaluate(() => ({ accent: document.documentElement.dataset.accent, roundness: document.documentElement.dataset.roundness }));
+  ok(appearance.accent === 'violet' && appearance.roundness === 'extra', 'custom accent and corner roundness apply immediately');
+  await page.click('[data-a=profile]'); await page.waitForTimeout(80);
+  await page.click('[data-a=replayTutorial]'); await page.waitForTimeout(80);
+  ok(await page.locator('.onboardWrap').count() === 1, 'tutorial can be replayed from settings');
+  await page.click('[data-a=skipTutorial]'); await page.waitForTimeout(80);
+  await page.fill('#onAge', '17'); await page.fill('#onName', 'Test User'); await page.fill('#onUsername', 'test_user_17'); await page.selectOption('#onSex', 'prefer-not');
+  await page.click('[data-a=finishOnboarding]'); await page.waitForTimeout(80);
+
   // 4. features that must exist
   const src = fs.readFileSync(html, 'utf8');
   todo(/rulebook|RULES\s*=/.test(src), 'rulebook present in source');
-  todo(/coach|walkthrough/i.test(src), 'interactive tutorial present in source');
+  ok(/APP WALKTHROUGH|VODIČ KROZ APLIKACIJU/.test(src), 'interactive tutorial present in source');
   todo(/data-a=(signin|register|signup)/.test(src), 'sign-in / registration flow present');
   console.log('page errors:', errors.length ? errors : 'none');
   await browser.close();
