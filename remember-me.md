@@ -27,5 +27,6 @@ Last updated: 2026-11-27
 - Preserve the existing ScamShield product requirements and UI behaviour unless asked to change them.
 - Keep the web HTML and Android asset copies synchronized.
 - Do not invent test results. Report build/device/backend checks as untested until actually run.
+- Build workflow run #65 failed only at the UI regression assertion for the password field. The app enables the field when the Supabase auth adapter is loaded; the old test incorrectly expected it to remain disabled even with the adapter. The regression test is being corrected to verify both provider-absent (disabled) and provider-present (enabled) states. This is a test correction, not a claim that live Supabase authentication has been tested.
 - Keep this file updated when repository structure, branches, implementation status, setup steps or test results change.
 - This file is an assistant handoff note; do not add Claude-specific workflow instructions or secrets here.
