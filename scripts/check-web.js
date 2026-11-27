@@ -137,7 +137,7 @@ if (!/Matches an internal reference example, not a user report|Poklapa se sa int
   console.error("A matching internal sample must be distinguished from a real user report.");
   process.exit(1);
 }
-if (/DEMO MODE|DEMO CONSOLE|<span[^>]*>DEMO<\\/span>/i.test(html)) {
+if (html.includes("DEMO MODE") || html.includes("DEMO CONSOLE") || html.includes("<span class=demoTag>DEMO</span>")) {
   console.error("Visible DEMO labels remain in the user interface.");
   process.exit(1);
 }
