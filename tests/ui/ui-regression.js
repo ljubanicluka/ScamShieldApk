@@ -164,7 +164,7 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
   await page.click('[data-a=acceptRules]'); await page.waitForTimeout(80);
   ok(await page.evaluate(() => !!S.rulesAccepted), 'community rules acceptance is saved');
   await page.click('[data-a=profile]'); await page.waitForTimeout(80);
-  await page.click('[data-a=openProfile]'); await page.waitForTimeout(80);
+  await page.click('.modalPanel [data-a=openProfile]'); await page.waitForTimeout(80);
   ok(await page.locator('.profileTabs button').count() === 4, 'profile has Posts, Comments, Reposts and About tabs');
   await page.click('[data-a=profileTab][data-v=about]'); await page.waitForTimeout(80);
   await page.click('[data-a=editLocalProfile]'); await page.waitForTimeout(80);
