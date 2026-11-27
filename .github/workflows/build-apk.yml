@@ -202,3 +202,41 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Package current tracked source for Claude
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          import subprocess
+
+          excluded_exact = {"ScamShieldApk-stage1-changed-files.zip"}
+          excluded_prefixes = ("ScamShield-Stage1-Source/",)
+          files = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\\0")
+          output = Path("ScamShield-Stage2-Claude-Source.zip")
+          count = 0
+          with ZipFile(output, "w", compression=ZIP_DEFLATED, compresslevel=6) as archive:
+              for raw in files:
+                  if not raw:
+                      continue
+                  name = raw.decode("utf-8")
+                  if name in excluded_exact or name.startswith(excluded_prefixes):
+                      continue
+                  path = Path(name)
+                  if not path.is_file():
+                      continue
+                  archive.write(path, arcname="ScamShieldApk/" + name)
+                  count += 1
+          if count == 0 or not output.is_file() or output.stat().st_size == 0:
+              raise SystemExit("Source archive was not created.")
+          print(f"Packaged {count} tracked source files; archive size: {output.stat().st_size} bytes")
+          PY
+
+      - name: Upload Claude source ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScamShield-Stage2-Claude-Source
+          path: ScamShield-Stage2-Claude-Source.zip
+          if-no-files-found: error
+          retention-days: 14
