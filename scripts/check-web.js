@@ -133,8 +133,12 @@ if (/ind\s*>=\s*5|hits\.reduce\([^)]*d\[2\]/s.test(html) || /Independent reports
   console.error("DEMO examples are being counted as real independent reports.");
   process.exit(1);
 }
-if (!/Matches a DEMO example|Poklapa se sa DEMO primerom/i.test(html)) {
-  console.error("A matching sample must be clearly labelled as a DEMO example.");
+if (!/Matches an internal reference example, not a user report|Poklapa se sa internim referentnim primerom, ne sa prijavom korisnika/i.test(html)) {
+  console.error("A matching internal sample must be distinguished from a real user report.");
+  process.exit(1);
+}
+if (html.includes("DEMO MODE") || html.includes("DEMO CONSOLE") || html.includes("<span class=demoTag>DEMO</span>")) {
+  console.error("Visible DEMO labels remain in the user interface.");
   process.exit(1);
 }
 
