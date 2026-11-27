@@ -287,3 +287,17 @@ Read this file before making any future ScamShield change.
 - Implement complete profile views and the four profile tabs (Posts, Comments, Reposts, About), then community interactions with clear demo/live boundaries.
 - Confirm the remote-source-of-truth versus local-only storage decision before designing cross-device backend sync. Cross-device sync requires a remote source of truth and transparent user consent.
 - Keep every new feature separately testable; update this file append-only after each stage, including exact files, tests, known limitations and build revision.
+
+
+## 2026-11-27 — Stage 3 initial implementation (tutorial/profile/appearance)
+
+- Updated `web/scamshield-app.html` and `app/src/main/assets/index.html` together; both must remain byte-identical.
+- Applied a softer visual treatment: more rounded cards, tiles, navigation buttons, inputs and dialogs, with short transitions.
+- Added selectable accent palettes (blue, violet, teal and coral) and three corner-roundness presets (soft, rounded, extra rounded), persisted in local app settings and applied in light/dark themes.
+- Replaced the original three-slide first-run introduction with three tutorial slides and a profile-setup step. Profile setup collects age, name, lowercase username and sex/prefer-not-to-say, and stores the profile locally on the device.
+- Added tutorial replay in Profile & Settings.
+- Removed visible DEMO MODE / DEMO labels and most demo wording from Community and related local sample interactions. Internal sample-data identifiers and data remain local implementation details; sample posts are not real reports or server-backed users.
+- Added Playwright regression coverage for onboarding, profile creation, tutorial replay and appearance preferences.
+- Not implemented yet: secure online sign-in/registration, email verification, account recovery, 200+ rulebook, full four-tab profiles and real multi-device community. These require a real authentication/backend design. Do not store plaintext passwords or present a local profile as a secure online account.
+- Backend architecture remains undecided in the project questionnaire: remote source of truth with local cache is needed for cross-device sync, while the user also previously requested phone-local storage. Confirm this before implementing online authentication or sync.
+- CI and physical Android device validation for this update are pending.
