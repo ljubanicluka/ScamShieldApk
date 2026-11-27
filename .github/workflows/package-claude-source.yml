@@ -6,6 +6,12 @@ on:
       - community-feed-badges-2026-11-26
     paths:
       - ".github/workflows/package-claude-source.yml"
+      - "web/**"
+      - "app/**"
+      - "tests/**"
+      - "scripts/**"
+      - "SCAMSHIELD_PROJECT_INSTRUCTIONS.md"
+      - "README.md"
 
 permissions:
   contents: read
