@@ -214,3 +214,22 @@ Read this file before making any future ScamShield change.
 - Changes: document-level finger-following swipe with 150 ms settle/enter animation, guarded for inputs, settings panel and (optionally) horizontally scrolling elements; two Settings toggles (swipe on/off, nested-list guard); real history back stack (nav taps push, swipes replace, settings panel has its own entry); `syncNativeLang()` on every render; filler text removed; duplicate `go()` removed.
 - Added `tests/ui/ui-regression.js` (headless Chrome, emulated touch). Rulebook, tutorial and sign-in are reported there as TODO, not as passing.
 - NOT done / still open: sign-in, interactive tutorial, rulebook (200+), per-account profile overview/full profile with four tabs, interactive map, drag-and-drop page order (move up/down buttons still exist), QR landing redesign with in-page camera preview, Device Security, Family, backend. No APK was built (no Android SDK in the session) and nothing was tested on a physical device.
+
+
+## 2026-11-27 — Stage 2 visual redesign (submitted for automated validation)
+
+### UI changes
+- Rebuilt the top bar with a shield/check brand mark, ScamShield wordmark, profile/settings access, language/script controls and theme control. Existing action identifiers and handlers are retained.
+- Rebuilt the six-item bottom navigation with consistent vector line icons, clearer selected state and accessible current-page semantics. Existing navigation order and page IDs are retained.
+- Added a consistent visual system: white/blue light mode, near-black/yellow/white dark mode, responsive card surfaces, typography hierarchy, inputs, button states, focus treatment and reduced-motion support.
+- Reworked the Home screen into a security-focused dashboard with primary Check and QR actions, local-only overview counters and the existing shortcut grid.
+- Reworked the visual hierarchy for Community, QR Scanner, Device Security, help after a scam, and Family. Existing content and actions are retained; the redesign does not create backend, authentication, antivirus, map or cross-device capabilities.
+- Added a clear QR/link scanner introduction and graphic while retaining the current camera, gallery, link-analysis and user-confirmation flow.
+- The synthetic Community preview disclosure and DEMO MODE label remain visible. No synthetic activity is represented as genuine reports or users.
+- Added responsive layouts for narrow phones and wider screens and subtle press/focus transitions.
+
+### Validation status
+- Source UI was updated first, then mirrored into the packaged Android HTML asset. CI will check that the files remain byte-identical.
+- Playwright tests now capture all six main screens in light/dark themes and Serbian Latin, Serbian Cyrillic and English (36 screenshots at a 390 x 780 viewport), and assert the new app shell and per-page layout.
+- Automated tests, the Android debug build and screenshot review are pending for this change. CI output does not replace physical-device testing.
+- Stage 2 is not marked complete until automated checks pass and screenshots have been reviewed.
