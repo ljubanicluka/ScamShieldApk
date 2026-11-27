@@ -97,134 +97,24 @@ declare
   wanted_username text;
 begin
   wanted_username := lower(coalesce(new.raw_user_meta_data ->> 'username',''));
-  if wanted_username !~ '^[a-z0-9_]{3,24}
-  insert into public.profiles(id,username,display_name)
-  values(new.id,wanted_username,coalesce(new.raw_user_meta_data ->> 'display_name',''))
-  on conflict (id) do nothing;
-  return new;
-end;
-$$;
 
-drop trigger if exists on_auth_user_created_scamshield on auth.users;
-create trigger on_auth_user_created_scamshield
-after insert on auth.users
-for each row execute procedure public.handle_new_user();
-
-alter table public.profiles enable row level security;
-alter table public.posts enable row level security;
-alter table public.comments enable row level security;
-alter table public.post_votes enable row level security;
-alter table public.reposts enable row level security;
-alter table public.scam_reports enable row level security;
-alter table public.rule_acceptances enable row level security;
-alter table public.moderation_actions enable row level security;
-
-drop policy if exists "Public profiles are visible" on public.profiles;
-create policy "Public profiles are visible" on public.profiles
-for select to anon, authenticated
-using (is_public = true or id = (select auth.uid()));
-
-drop policy if exists "Users update own profile" on public.profiles;
-create policy "Users update own profile" on public.profiles
-for update to authenticated
-using (id = (select auth.uid()))
-with check (id = (select auth.uid()));
-
-drop policy if exists "Published posts are visible" on public.posts;
-create policy "Published posts are visible" on public.posts
-for select to anon, authenticated
-using (status = 'published' or author_id = (select auth.uid()));
-
-drop policy if exists "Signed-in users create own posts" on public.posts;
-create policy "Signed-in users create own posts" on public.posts
-for insert to authenticated
-with check (author_id = (select auth.uid()));
-
-drop policy if exists "Authors update own posts" on public.posts;
-create policy "Authors update own posts" on public.posts
-for update to authenticated
-using (author_id = (select auth.uid()))
-with check (author_id = (select auth.uid()));
-
-drop policy if exists "Authors delete own posts" on public.posts;
-create policy "Authors delete own posts" on public.posts
-for delete to authenticated
-using (author_id = (select auth.uid()));
-
-drop policy if exists "Published comments are visible" on public.comments;
-create policy "Published comments are visible" on public.comments
-for select to anon, authenticated
-using (
-  status = 'published'
-  and exists (select 1 from public.posts p where p.id = post_id and p.status = 'published')
-);
-
-drop policy if exists "Signed-in users create own comments" on public.comments;
-create policy "Signed-in users create own comments" on public.comments
-for insert to authenticated
-with check (
-  author_id = (select auth.uid())
-  and exists (select 1 from public.posts p where p.id = post_id and p.status = 'published')
-);
-
-drop policy if exists "Authors delete own comments" on public.comments;
-create policy "Authors delete own comments" on public.comments
-for delete to authenticated
-using (author_id = (select auth.uid()));
-
--- Vote rows are private to their owner; public totals should be exposed only
--- through a controlled aggregate RPC in a later integration step.
-drop policy if exists "Users see only their votes" on public.post_votes;
-create policy "Users see only their votes" on public.post_votes
-for select to authenticated using (user_id = (select auth.uid()));
-
-drop policy if exists "Users create own votes" on public.post_votes;
-create policy "Users create own votes" on public.post_votes
-for insert to authenticated with check (user_id = (select auth.uid()));
-
-drop policy if exists "Users change own votes" on public.post_votes;
-create policy "Users change own votes" on public.post_votes
-for update to authenticated using (user_id = (select auth.uid()))
-with check (user_id = (select auth.uid()));
-
-drop policy if exists "Users remove own votes" on public.post_votes;
-create policy "Users remove own votes" on public.post_votes
-for delete to authenticated using (user_id = (select auth.uid()));
-
-drop policy if exists "Reposts visible to owner" on public.reposts;
-create policy "Reposts visible to owner" on public.reposts
-for select to authenticated using (user_id = (select auth.uid()));
-
-drop policy if exists "Users create own reposts" on public.reposts;
-create policy "Users create own reposts" on public.reposts
-for insert to authenticated with check (user_id = (select auth.uid()));
-
-drop policy if exists "Users remove own reposts" on public.reposts;
-create policy "Users remove own reposts" on public.reposts
-for delete to authenticated using (user_id = (select auth.uid()));
-
-drop policy if exists "Users submit reports as themselves" on public.scam_reports;
-create policy "Users submit reports as themselves" on public.scam_reports
-for insert to authenticated with check (reporter_id = (select auth.uid()));
-
-drop policy if exists "Users see their own reports" on public.scam_reports;
-create policy "Users see their own reports" on public.scam_reports
-for select to authenticated using (reporter_id = (select auth.uid()));
-
-drop policy if exists "Users accept rules for themselves" on public.rule_acceptances;
-create policy "Users accept rules for themselves" on public.rule_acceptances
-for all to authenticated using (user_id = (select auth.uid()))
-with check (user_id = (select auth.uid()));
-
--- No client policies for moderation_actions: moderation writes must be done
--- by a trusted server-side function after moderator authorization.
-
-     or exists (select 1 from public.profiles p where p.username = wanted_username) then
+  if wanted_username !~ '^[a-z0-9_]{3,24}$'
+     or exists (
+       select 1
+       from public.profiles p
+       where p.username = wanted_username
+     ) then
     wanted_username := 'user_' || substr(replace(new.id::text,'-',''),1,12);
   end if;
+
   insert into public.profiles(id,username,display_name)
-  values(new.id,wanted_username,coalesce(new.raw_user_meta_data ->> 'display_name',''))
+  values(
+    new.id,
+    wanted_username,
+    left(coalesce(new.raw_user_meta_data ->> 'display_name',''),60)
+  )
   on conflict (id) do nothing;
+
   return new;
 end;
 $$;
