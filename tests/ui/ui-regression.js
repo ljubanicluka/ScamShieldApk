@@ -78,7 +78,10 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
       await goto(PAGES[i]);
       if (i < 5) { await swipe(330, y, 60, y); ok(await cur() === PAGES[i + 1], `swipe left at y=${y} from ${PAGES[i]} -> ${PAGES[i + 1]} (got ${await cur()})`); }
       await goto(PAGES[i]);
-      if (i > 0) { await swipe(60, y, 330, y); ok(await cur() === PAGES[i - 1], `swipe right at y=${y} from ${PAGES[i]} -> ${PAGES[i - 1]} (got ${await cur()})`); }
+      // On Family the new layout places an input at y=650; swipe guards should prevent
+      // gestures from hijacking the input, so test the adjacent safe area instead.
+      const swipeY = PAGES[i] === 'family' && y === 650 ? 600 : y;
+      if (i > 0) { await swipe(60, swipeY, 330, swipeY); ok(await cur() === PAGES[i - 1], `swipe right at y=${swipeY} from ${PAGES[i]} -> ${PAGES[i - 1]} (got ${await cur()})`); }
     }
   }
   // 2. language switch updates immediately incl. QR page
