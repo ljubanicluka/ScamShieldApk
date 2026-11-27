@@ -235,3 +235,5 @@ Read this file before making any future ScamShield change.
 - Stage 2 is not marked complete until automated checks pass and screenshots have been reviewed.
 
 - Follow-up validation correction: repository has a later active `R()` renderer that overrides the earlier declaration. The page-introduction/home-hero logic was moved into the active renderer; the next CI run verifies the actual rendered six-page layout.
+
+- Follow-up visual review: removed redundant duplicate headings/descriptions from Home and QR Scanner; kept the QR scan action card and original camera/gallery actions. Updated the swipe regression case to avoid starting inside the Family screen's protected text input; gestures inside controls remain intentionally blocked.
