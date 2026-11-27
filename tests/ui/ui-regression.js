@@ -173,6 +173,7 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
   await page.click('[data-a=openAccount]').catch(() => {}); await page.waitForTimeout(80);
   ok(await page.locator('#authEmail').count() === 1, 'account access page is available');
   ok(await page.locator('#authPassword').isDisabled(), 'password field stays disabled until a secure auth provider is connected');
+  ok(await page.locator('.ruleItem').count() === 0, 'account access does not render stale rulebook entries');
 
   // 4. features that must exist
   const src = fs.readFileSync(html, 'utf8');
