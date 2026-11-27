@@ -1,0 +1,87 @@
+name: Package ScamShield source for Claude
+
+on:
+  push:
+    branches:
+      - community-feed-badges-2026-11-26
+    paths:
+      - ".github/workflows/package-claude-source.yml"
+      - "web/**"
+      - "app/**"
+      - "tests/**"
+      - "scripts/**"
+      - "SCAMSHIELD_PROJECT_INSTRUCTIONS.md"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out current feature branch
+        uses: actions/checkout@v4
+
+      - name: Create clean source ZIP
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          import subprocess
+
+          excluded_exact = {"ScamShieldApk-stage1-changed-files.zip"}
+          excluded_prefixes = ("ScamShield-Stage1-Source/",)
+          files = subprocess.check_output(["git", "ls-files"], text=True).splitlines()
+          output = Path("ScamShield-Stage2-Claude-Source.zip")
+          count = 0
+          with ZipFile(output, "w", compression=ZIP_DEFLATED, compresslevel=6) as archive:
+              for raw in files:
+                  if not raw:
+                      continue
+                  name = raw
+                  if name in excluded_exact or name.startswith(excluded_prefixes):
+                      continue
+                  path = Path(name)
+                  if not path.is_file():
+                      continue
+                  archive.write(path, arcname="ScamShieldApk/" + name)
+                  count += 1
+          if count == 0 or not output.is_file() or output.stat().st_size == 0:
+              raise SystemExit("Source archive was not created.")
+          print(f"Packaged {count} tracked files; ZIP size: {output.stat().st_size} bytes")
+          PY
+
+      - name: Verify source ZIP
+        run: |
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          with ZipFile("ScamShield-Stage2-Claude-Source.zip") as archive:
+              bad = archive.testzip()
+              if bad:
+                  raise SystemExit(f"Corrupt ZIP entry: {bad}")
+              names = archive.namelist()
+              required = [
+                  "ScamShieldApk/web/scamshield-app.html",
+                  "ScamShieldApk/app/src/main/assets/index.html",
+                  "ScamShieldApk/SCAMSHIELD_PROJECT_INSTRUCTIONS.md",
+                  "ScamShieldApk/tests/ui/ui-regression.js",
+              ]
+              missing = [p for p in required if p not in names]
+              if missing:
+                  raise SystemExit(f"Missing required project files: {missing}")
+              source = archive.read(required[0])
+              asset = archive.read(required[1])
+              if source != asset:
+                  raise SystemExit("HTML source and Android asset differ.")
+              print(f"ZIP valid; {len(names)} files; source and Android asset byte-identical.")
+          PY
+
+      - name: Upload Claude source ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScamShield-Stage2-Claude-Source
+          path: ScamShield-Stage2-Claude-Source.zip
+          if-no-files-found: error
+          retention-days: 14
