@@ -154,11 +154,31 @@ const PAGES = ['tools', 'home', 'feed', 'link', 'help', 'family'];
   await page.fill('#onAge', '17'); await page.fill('#onName', 'Test User'); await page.fill('#onUsername', 'test_user_17'); await page.selectOption('#onSex', 'prefer-not');
   await page.click('[data-a=finishOnboarding]'); await page.waitForTimeout(80);
 
+  // Stage 3: rules, profile tabs, guest browsing and account boundary.
+  await page.click('[data-a=profile]'); await page.waitForTimeout(80);
+  await page.click('[data-a=openRules]'); await page.waitForTimeout(80);
+  ok(await page.locator('.ruleItem').count() === 200, 'rulebook contains 200 numbered entries');
+  await page.fill('#ruleSearch', 'PIN'); await page.waitForTimeout(80);
+  ok(await page.locator('.ruleItem').count() > 0, 'rulebook search returns matching rules');
+  await page.click('[data-a=ruleFilter][data-v=all]'); await page.waitForTimeout(80);
+  await page.click('[data-a=acceptRules]'); await page.waitForTimeout(80);
+  ok(await page.evaluate(() => !!S.rulesAccepted), 'community rules acceptance is saved');
+  await page.click('[data-a=profile]'); await page.waitForTimeout(80);
+  await page.click('[data-a=openProfile]'); await page.waitForTimeout(80);
+  ok(await page.locator('.profileTabs button').count() === 4, 'profile has Posts, Comments, Reposts and About tabs');
+  await page.click('[data-a=profileTab][data-v=about]'); await page.waitForTimeout(80);
+  await page.click('[data-a=editLocalProfile]'); await page.waitForTimeout(80);
+  ok(await page.locator('#editBio').count() === 1, 'profile editor includes optional bio');
+  await page.click('[data-a=saveLocalProfile]'); await page.waitForTimeout(80);
+  await page.click('[data-a=openAccount]').catch(() => {}); await page.waitForTimeout(80);
+  ok(await page.locator('#authEmail').count() === 1, 'account access page is available');
+  ok(await page.locator('#authPassword').isDisabled(), 'password field stays disabled until a secure auth provider is connected');
+
   // 4. features that must exist
   const src = fs.readFileSync(html, 'utf8');
-  todo(/rulebook|RULES\s*=/.test(src), 'rulebook present in source');
+  ok(/RULEBOOK=RULE_CATEGORIES\.flatMap/.test(src), 'rulebook data source present');
   ok(/APP WALKTHROUGH|VODIČ KROZ APLIKACIJU/.test(src), 'interactive tutorial present in source');
-  todo(/data-a=(signin|register|signup)/.test(src), 'sign-in / registration flow present');
+  ok(/authSignIn/.test(src) && /authRegister/.test(src), 'account sign-in and registration adapter hooks present');
   console.log('page errors:', errors.length ? errors : 'none');
   await browser.close();
   console.log(fails ? `\n${fails} FAILED` : '\nALL PASSED');
