@@ -249,3 +249,41 @@ Read this file before making any future ScamShield change.
 - The source handoff ZIP passed ZIP integrity verification; its editable web UI and Android WebView copies are byte-identical.
 - Stage 2 visual redesign is complete from the source/automated-build perspective. A physical Android installation and interaction pass is still required before calling the UI device-verified.
 - PR #1 remains open and unmerged. Continue working on the feature branch; do not merge without the user's explicit approval.
+
+
+## 2026-11-27 — Current handoff after Stage 2 completion
+
+### Canonical updated UI files
+- The canonical editable application UI is `web/scamshield-app.html`.
+- The Android WebView copy is `app/src/main/assets/index.html`. These two files must remain byte-for-byte identical; the Stage 2 build verified this.
+- Both files contain the six current main pages: Device Security (`tools`), Home (`home`), Community (`feed`), QR Scanner (`link`), Help / I’ve Been Scammed (`help`), and Family (`family`).
+- Do not create separate competing page implementations. The six pages share one HTML application shell and are selected by the existing page IDs/navigation.
+- Current UI includes the redesigned shared header and bottom navigation, light/dark theme styling, Serbian Latin, Serbian Cyrillic and English render modes, Home hero actions, QR scanner introduction, page headers, Community DEMO MODE disclosure, Help warning panel, responsive cards and transitions.
+- The visual screenshot matrix is 36 captures: six pages × two themes × three language modes at 390 × 780. A focused set of 12 Serbian Latin screenshots (all six pages in light and dark mode) is supplied separately as a visual review bundle.
+
+### Current source / build state
+- Current feature branch: `community-feed-badges-2026-11-26`.
+- Latest branch commit at this handoff: `8c6cf977bd68632cd05e28d1ac25c2faccd80725` (documentation-only update after the verified UI/build commit).
+- Verified UI and APK source revision: `6ded7b0be2c7f68f32cbc0a4c82cc2bac6ca59cb`.
+- Successful Android build workflow run: `46024865835`.
+- Successful source packaging workflow run for the latest handoff document: `46025506646`.
+- PR #1 remains open and unmerged. Latest observed comparison: feature branch is 34 commits ahead and 1 commit behind `main`; GitHub reported it mergeable at the last check. Recheck before any merge or branch update. Never merge without explicit user approval.
+- The latest source ZIP should be generated from the current feature branch, not from `main` or an older artifact. The APK from the successful UI revision is available as a build artifact and was verified as a valid Android package.
+
+### Accurate implementation boundaries
+- Stage 2 is complete for the visual redesign and automated build checks. Physical-device installation and interaction testing are not yet confirmed.
+- Community remains a synthetic local DEMO MODE preview; it is not a live multi-user backend.
+- The Home counters/summary are local preview UI, not verified live statistics.
+- Device Security is guidance/local functionality within Android limitations, not a full antivirus or whole-device malware scan.
+- QR decoding and the existing native camera/gallery bridge are retained; never auto-open destinations. Link reputation must not be described as live unless a real reputation source is connected and verified.
+- The Help page provides guidance; it does not automatically recover funds or contact banks.
+- Family is currently a UI/preview, not real cross-device monitoring or synchronisation.
+- Authentication, real backend, tutorial, full 200+ rulebook, complete profiles, interactive live scam map, server-side moderation and cross-device Family remain future work unless later verified by code and tests.
+
+### Next stage — Stage 3
+- Before adding features, install the Stage 2 APK on a physical Android device and test all six navigation destinations, Back, swipes around inputs, settings, language/script changes, light/dark theme, camera permission, QR camera and gallery flows.
+- Record any device-only defects with reproduction steps and screenshots; fix them without replacing the UI architecture unless evidence justifies it.
+- Then implement account/onboarding foundations: guest browsing, registration/sign-in, age/name/username/sex onboarding as specified, email verification, tutorial and rulebook. Do not imply demo account state is real authentication.
+- Implement complete profile views and the four profile tabs (Posts, Comments, Reposts, About), then community interactions with clear demo/live boundaries.
+- Confirm the remote-source-of-truth versus local-only storage decision before designing cross-device backend sync. Cross-device sync requires a remote source of truth and transparent user consent.
+- Keep every new feature separately testable; update this file append-only after each stage, including exact files, tests, known limitations and build revision.
